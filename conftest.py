@@ -42,3 +42,39 @@ def login_user(driver, create_and_delete_user):
     auth_page.open_auth_page()
     auth_page.auth(create_and_delete_user["email"], create_and_delete_user["password"])
     return driver
+from selenium import webdriver
+from selenium.webdriver.firefox.service import Service
+import os
+
+def pytest_addoption(parser):
+    parser.addoption("--browser", action="store", default="chrome")
+
+@pytest.fixture(scope="function")
+def browser(request):
+    browser_name = request.config.getoption("--browser")
+    
+    if browser_name == "firefox":
+        # Укажите явный путь к geckodriver
+        gecko_path = os.path.join(os.path.dirname(__file__), "geckodriver.exe")
+        service = Service(executable_path=gecko_path)
+        
+        options = webdriver.FirefoxOptions()
+        # Добавьте опции для стабильности
+        options.add_argument("--headless")  # для безголового режима (опционально)
+        options.add_argument("--no-sandbox")
+        options.add_argument("--disable-dev-shm-usage")
+        
+        browser = webdriver.Firefox(service=service, options=options)
+    
+    elif browser_name == "chrome":
+        # Аналогично для Chrome если нужно
+        from selenium.webdriver.chrome.service import Service as ChromeService
+        chrome_path = os.path.join(os.path.dirname(__file__), "chromedriver.exe")
+        service = ChromeService(executable_path=chrome_path)
+        
+        options = webdriver.ChromeOptions()
+        browser = webdriver.Chrome(service=service, options=options)
+    
+    browser.maximize_window()
+    yield browser
+    browser.quit()
